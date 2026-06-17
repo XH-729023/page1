@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 全景 - 探索人工智能世界</title>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a12;
+            --bg-card: rgba(18,18,30,0.85);
+            --bg-card-hover: rgba(28,28,45,0.95);
+            --text: #e8e8f0;
+            --text-muted: #8888a0;
+            --accent: #6c5ce7;
+            --accent-light: #a29bfe;
+            --border: rgba(255,255,255,0.08);
+            --radius: 16px;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ===== Stars Canvas ===== */
+        #stars {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none; display: block;
+        }
+
+        /* ===== Animated Gradient BG ===== */
+        .bg-anim {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: linear-gradient(-45deg, #0a0a1a, #0d0b2e, #1a0a2e, #0a1a2e, #0f0a1a);
+            background-size: 400% 400%;
+            animation: bgShift 18s ease infinite;
+        }
+        .bg-anim::before {
+            content: ''; position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 700px 700px at 15% 25%, rgba(108,92,231,0.15) 0%, transparent 70%),
+                radial-gradient(ellipse 500px 500px at 80% 65%, rgba(0,206,209,0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 400px 400px at 45% 85%, rgba(255,107,107,0.08) 0%, transparent 70%),
+                radial-gradient(ellipse 350px 350px at 90% 10%, rgba(139,92,246,0.1) 0%, transparent 70%);
+            animation: glowDrift 22s ease-in-out infinite alternate;
+        }
+        @keyframes bgShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes glowDrift {
+            0% { transform: translate(0,0) scale(1); }
+            50% { transform: translate(30px,-20px) scale(1.05); }
+            100% { transform: translate(-20px,30px) scale(0.97); }
+        }
+
+        /* ===== Nav ===== */
+        nav {
+            position: fixed; top: 0; width: 100%; z-index: 100;
+            background: rgba(10,10,18,0.8); backdrop-filter: blur(24px);
+            border-bottom: 1px solid var(--border); transition: box-shadow 0.3s;
+        }
+        nav.scrolled { box-shadow: 0 4px 30px rgba(0,0,0,0.5); }
+        .nav-inner {
+            max-width: 1200px; margin: 0 auto; padding: 0 24px;
+            height: 64px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .logo {
+            font-size: 1.4rem; font-weight: 700;
+            background: linear-gradient(135deg, #a29bfe, #00d2d3);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .nav-links { display: flex; gap: 28px; list-style: none; }
+        .nav-links a {
+            color: var(--text-muted); text-decoration: none; font-size: 0.9rem;
+            transition: color 0.2s; position: relative;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: -4px; left: 0;
+            width: 0; height: 2px; background: var(--accent); transition: width 0.3s;
+        }
+        .nav-links a:hover::after { width: 100%; }
+
+        /* ===== Hero ===== */
+        .hero {
+            min-height: 100vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+            padding: 120px 24px 80px; position: relative; z-index: 1;
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 18px; border: 1px solid var(--border); border-radius: 100px;
+            font-size: 0.85rem; color: var(--text-muted); margin-bottom: 28px;
+            background: rgba(108,92,231,0.06);
+        }
+        .hero-badge .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #00d2d3; animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity:1; transform:scale(1); }
+            50% { opacity:0.5; transform:scale(0.7); }
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem,6vw,4.5rem); font-weight: 800;
+            line-height: 1.15; margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 0%, #a29bfe 50%, #00d2d3 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hero p { max-width: 560px; font-size: 1.15rem; color: var(--text-muted); margin-bottom: 40px; }
+        .hero-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 36px; background: linear-gradient(135deg, #6c5ce7, #8b5cf6);
+            color: #fff; border: none; border-radius: 100px;
+            font-size: 1rem; font-weight: 600; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s; text-decoration: none;
+        }
+        .hero-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(108,92,231,0.4); }
+        .scroll-hint {
+            position: absolute; bottom: 32px;
+            animation: bounce 2s infinite; color: var(--text-muted); font-size: 1.5rem;
+        }
+        @keyframes bounce {
+            0%,100% { transform: translateY(0); }
+            50% { transform: translateY(8px); }
+        }
+
+        /* ===== Stats ===== */
+        .stats {
+            display: flex; justify-content: center; gap: 60px; padding: 48px 24px;
+            border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+            background: rgba(18,18,30,0.5); position: relative; z-index: 1;
+        }
+        .stat { text-align: center; }
+        .stat-num {
+            font-size: 2.2rem; font-weight: 800;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .stat-label { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+
+        /* ===== Section ===== */
+        section { padding: 100px 24px; position: relative; z-index: 1; }
+        .sec-head { text-align: center; margin-bottom: 64px; }
+        .sec-head h2 { font-size: 2.2rem; font-weight: 700; margin-bottom: 12px; }
+        .sec-head p { color: var(--text-muted); max-width: 500px; margin: 0 auto; }
+
+        /* ===== Filter ===== */
+        .filters { display: flex; justify-content: center; gap: 10px; margin-bottom: 48px; flex-wrap: wrap; }
+        .filter-btn {
+            padding: 8px 20px; border: 1px solid var(--border); border-radius: 100px;
+            background: transparent; color: var(--text-muted); font-size: 0.9rem;
+            cursor: pointer; transition: all 0.25s;
+        }
+        .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+        .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+        /* ===== Cards ===== */
+        .cards {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px;
+        }
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 28px;
+            transition: all 0.35s; position: relative; overflow: hidden;
+            opacity: 0; transform: translateY(30px);
+            backdrop-filter: blur(10px);
+        }
+        .card.show { opacity: 1; transform: translateY(0); transition: opacity 0.5s, transform 0.5s; }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--c, #6c5ce7), transparent);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .card:hover {
+            background: var(--bg-card-hover); border-color: var(--c, #6c5ce7);
+            transform: translateY(-4px); box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+        }
+        .card:hover::before { opacity: 1; }
+        .card-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+        .card-icon {
+            width: 50px; height: 50px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; font-weight: 700; flex-shrink: 0;
+        }
+        .card-name { font-size: 1.2rem; font-weight: 700; }
+        .card-co { font-size: 0.8rem; color: var(--text-muted); }
+        .card-desc { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px; line-height: 1.7; }
+        .card-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .tag {
+            padding: 4px 12px; border-radius: 100px; font-size: 0.75rem; font-weight: 500; border: 1px solid;
+        }
+        .card-features { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .feat { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-muted); }
+        .feat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .card-foot {
+            margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .card-price { font-size: 0.82rem; color: var(--text-muted); }
+        .card-price strong { color: var(--text); font-size: 0.95rem; }
+        .card-link {
+            font-size: 0.85rem; color: var(--accent-light); text-decoration: none;
+            display: flex; align-items: center; gap: 4px; transition: gap 0.2s;
+        }
+        .card-link:hover { gap: 8px; }
+
+        /* ===== Table ===== */
+        .tbl-wrap { max-width: 1200px; margin: 0 auto; overflow-x: auto; }
+        .tbl { width: 100%; border-collapse: collapse; min-width: 900px; }
+        .tbl th, .tbl td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+        .tbl th {
+            color: var(--text-muted); font-weight: 600; font-size: 0.8rem;
+            text-transform: uppercase; letter-spacing: 1px; background: rgba(18,18,30,0.95);
+        }
+        .tbl td:first-child { min-width: 150px; }
+        .tbl tr:hover td { background: rgba(108,92,231,0.06); }
+        .tbl .ai-n { font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .mi {
+            width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700;
+        }
+        .stars { display: flex; gap: 2px; }
+        .star { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.08); }
+        .star.on { background: #6c5ce7; }
+
+        /* ===== Timeline ===== */
+        .tl { max-width: 700px; margin: 0 auto; position: relative; }
+        .tl::before {
+            content: ''; position: absolute; left: 24px; top: 0; bottom: 0;
+            width: 2px; background: var(--border);
+        }
+        .tl-item { position: relative; padding-left: 64px; padding-bottom: 40px; }
+        .tl-dot {
+            position: absolute; left: 16px; top: 4px; width: 18px; height: 18px;
+            border-radius: 50%; border: 3px solid #6c5ce7; background: var(--bg);
+        }
+        .tl-date { font-size: 0.8rem; color: #a29bfe; font-weight: 600; margin-bottom: 6px; }
+        .tl-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 4px; }
+        .tl-desc { font-size: 0.88rem; color: var(--text-muted); }
+
+        /* ===== Footer ===== */
+        footer { text-align: center; padding: 48px 24px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.85rem; position: relative; z-index: 1; }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .stats { flex-direction: column; gap: 24px; }
+            .cards { grid-template-columns: 1fr; }
+            .card-features { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-anim"></div>
+<canvas id="stars"></canvas>
+
+<!-- Nav -->
+<nav id="nav">
+    <div class="nav-inner">
+        <div class="logo">AI 全景</div>
+        <ul class="nav-links">
+            <li><a href="#home">首页</a></li>
+            <li><a href="#ais">AI 一览</a></li>
+            <li><a href="#compare">对比</a></li>
+            <li><a href="#timeline">发展史</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero" id="home">
+    <div class="hero-badge"><span class="dot"></span>持续更新 · 2025</div>
+    <h1>探索人工智能<br>的无限可能</h1>
+    <p>从对话助手到创意引擎，从代码生成到视频制作——全面了解当今最前沿的 AI 产品与技术</p>
+    <a href="#ais" class="hero-btn">开始探索 ↓</a>
+    <div class="scroll-hint">⌄</div>
+</section>
+
+<!-- Stats -->
+<div class="stats">
+    <div class="stat"><div class="stat-num">24</div><div class="stat-label">主流 AI 产品</div></div>
+    <div class="stat"><div class="stat-num">10+</div><div class="stat-label">科技巨头参与</div></div>
+    <div class="stat"><div class="stat-num">10亿+</div><div class="stat-label">全球用户</div></div>
+    <div class="stat"><div class="stat-num">2025</div><div class="stat-label">AI 爆发元年</div></div>
+</div>
+
+<!-- AI Cards -->
+<section id="ais">
+    <div class="sec-head">
+        <h2>AI 产品全景</h2>
+        <p>了解每一款改变世界的 AI 产品</p>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div class="cards" id="cardGrid"></div>
+</section>
+
+<!-- Compare -->
+<section id="compare" style="background:rgba(18,18,30,0.3);">
+    <div class="sec-head">
+        <h2>横向对比</h2>
+        <p>一表看清各 AI 的核心差异</p>
+    </div>
+    <div class="tbl-wrap">
+        <table class="tbl" id="cmpTbl">
+            <thead>
+                <tr>
+                    <th>AI 产品</th><th>开发商</th><th>类别</th>
+                    <th>中文</th><th>编程</th><th>创意</th><th>视频</th><th>免费</th>
+                </tr>
+            </thead>
+            <tbody id="cmpBody"></tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Timeline -->
+<section id="timeline">
+    <div class="sec-head">
+        <h2>AI 发展里程碑</h2>
+        <p>见证人工智能的关键时刻</p>
+    </div>
+    <div class="tl" id="tlList"></div>
+</section>
+
+<footer>
+    <p>AI 全景 &copy; 2025 &middot; 数据仅供参考，请以各产品官网为准</p>
+    <p style="margin-top:8px;">用心制作 &middot; 持续更新</p>
+</footer>
+
+<script>
+// ==================== AI DATA ====================
+var AI_LIST = [
+    {
+        name: "ChatGPT",
+        co: "OpenAI",
+        icon: "G",
+        color: "#10a37f",
+        cat: ["chat","code"],
+        desc: "全球用户量最大的 AI 对话助手，基于 GPT-4o / o3 等模型。支持文本、图片、语音、视频多模态交互，拥有强大的插件生态和 GPTs 自定义功能，月活跃用户超过 3 亿。",
+        tags: ["对话","编程","写作"],
+        feats: ["GPT-4o / o3 模型","多模态输入","插件 & GPTs 生态","联网搜索","代码解释器","语音 & 视频对话"],
+        price: "免费 / Plus $20/月",
+        url: "https://chat.openai.com",
+        s: {zh:4, code:5, art:4, vid:2}
+    },
+    {
+        name: "Claude",
+        co: "Anthropic",
+        icon: "C",
+        color: "#d4a574",
+        cat: ["chat","code"],
+        desc: "Anthropic 推出的安全型 AI 助手，以深度推理和超长上下文著称。Claude 4 系列在编程、分析和长文写作方面表现顶尖，支持 200K tokens 上下文窗口。",
+        tags: ["长文本","深度推理","安全"],
+        feats: ["200K 上下文窗口","Artifacts 可视化","Projects 项目管理","Claude 4 系列模型","代码生成 & 分析","文件 & 图片理解"],
+        price: "免费 / Pro $20/月",
+        url: "https://claude.ai",
+        s: {zh:4, code:5, art:4, vid:1}
+    },
+    {
+        name: "Gemini",
+        co: "Google",
+        icon: "Ge",
+        color: "#4285f4",
+        cat: ["chat","search"],
+        desc: "Google 推出的原生多模态 AI，深度集成 Google 全家桶。Gemini 2.5 Pro 支持百万级 token 上下文，在搜索、学术、办公场景中表现出色。",
+        tags: ["多模态","Google 集成","百万上下文"],
+        feats: ["原生多模态理解","Google 搜索/邮箱/文档集成","100万 token 上下文","Gemini 2.5 Pro","实时信息获取","AI Agent 功能"],
+        price: "免费 / Advanced $20/月",
+        url: "https://gemini.google.com",
+        s: {zh:4, code:4, art:4, vid:3}
+    },
+    {
+        name: "Grok",
+        co: "xAI (Elon Musk)",
+        icon: "X",
+        color: "#1da1f2",
+        cat: ["chat","search"],
+        desc: "Elon Musk 旗下 xAI 推出的 AI 助手，深度集成 X（Twitter）平台。风格幽默大胆，支持实时社交媒体信息获取和 DeepSearch 深度研究功能。",
+        tags: ["实时信息","X 平台","DeepSearch"],
+        feats: ["X/Twitter 实时数据","DeepSearch 深度研究","图像理解 & 生成","幽默对话风格","多模态能力","Think 推理模式"],
+        price: "免费 / SuperGrok $30/月",
+        url: "https://grok.com",
+        s: {zh:3, code:4, art:3, vid:2}
+    },
+    {
+        name: "DeepSeek",
+        co: "深度求索",
+        icon: "DS",
+        color: "#4D6BFE",
+        cat: ["chat","code"],
+        desc: "中国 AI 黑马，以极低成本训练出媲美 GPT-4 的模型。DeepSeek-R1 推理模型和 V3 通用模型开源免费，在编程、数学推理方面表现惊人，引发全球关注。",
+        tags: ["高性价比","推理","开源"],
+        feats: ["R1 深度推理模型","V3 通用大模型","完全开源可商用","API 价格极低","数学 & 编程顶尖","长上下文支持"],
+        price: "免费",
+        url: "https://chat.deepseek.com",
+        s: {zh:5, code:5, art:3, vid:1}
+    },
+    {
+        name: "Kimi",
+        co: "月之暗面 Moonshot AI",
+        icon: "K",
+        color: "#6366f1",
+        cat: ["chat","search"],
+        desc: "国内最受欢迎的 AI 助手之一，以超长上下文能力出圈。支持 200 万字超长文本输入，擅长文档分析、论文阅读、网页总结，深受学生和研究者喜爱。",
+        tags: ["超长文本","文档分析","学术"],
+        feats: ["200万字超长上下文","文档深度解析","联网实时搜索","学术论文分析","多文件对比","Kimi+ 探索版"],
+        price: "免费 / 会员 ¥99/月",
+        url: "https://kimi.moonshot.cn",
+        s: {zh:5, code:3, art:3, vid:1}
+    },
+    {
+        name: "文心一言",
+        co: "百度",
+        icon: "文",
+        color: "#2932e1",
+        cat: ["chat","creative"],
+        desc: "百度推出的大语言模型，深度理解中文语境和中国文化。基于文心大模型 4.5，在中文理解、文学创作、知识问答等方面表现出色，整合百度搜索生态。",
+        tags: ["中文优化","文学创作","百度生态"],
+        feats: ["中文深度理解","文学 & 文案创作","百度搜索整合","图片生成","知识问答","插件 & API"],
+        price: "免费 / 会员 ¥59.9/月",
+        url: "https://yiyan.baidu.com",
+        s: {zh:5, code:3, art:4, vid:2}
+    },
+    {
+        name: "通义千问",
+        co: "阿里巴巴",
+        icon: "通",
+        color: "#ff6a00",
+        cat: ["chat","code"],
+        desc: "阿里巴巴推出的大语言模型，Qwen 系列开源模型广受全球好评。支持长文本、代码、多模态理解，在中文场景和开发者生态中表现优秀。",
+        tags: ["开源","中文","Qwen 系列"],
+        feats: ["Qwen 开源模型","长文本处理","多模态理解","代码生成","中文优化","阿里云 API"],
+        price: "免费",
+        url: "https://tongyi.aliyun.com",
+        s: {zh:5, code:4, art:3, vid:1}
+    },
+    {
+        name: "豆包",
+        co: "字节跳动",
+        icon: "豆",
+        color: "#fe2c55",
+        cat: ["chat","creative"],
+        desc: "字节跳动推出的 AI 助手，用户量增长迅猛。基于云雀大模型，对话风格轻松有趣，支持创意写作、图片生成、视频理解、智能体创建等多种能力。",
+        tags: ["趣味对话","创意","多模态"],
+        feats: ["轻松对话风格","图片 & 视频理解","智能体创建","语音交互","创意写作","字节生态集成"],
+        price: "免费",
+        url: "https://www.doubao.com",
+        s: {zh:5, code:3, art:4, vid:3}
+    },
+    {
+        name: "Coze 扣子",
+        co: "字节跳动",
+        icon: "Cz",
+        color: "#00d4aa",
+        cat: ["chat","code"],
+        desc: "字节跳动推出的 AI Bot 开发平台，零代码即可创建自定义 AI 智能体。支持知识库、插件、工作流编排，可一键发布到微信、飞书、Discord 等平台。",
+        tags: ["Bot 开发","零代码","工作流"],
+        feats: ["零代码构建 Bot","知识库接入","插件市场","工作流编排","多平台发布","API 部署"],
+        price: "免费",
+        url: "https://www.coze.com",
+        s: {zh:5, code:3, art:2, vid:1}
+    },
+    {
+        name: "Claude Code",
+        co: "Anthropic",
+        icon: "⌘",
+        color: "#d4a574",
+        cat: ["code"],
+        desc: "Anthropic 推出的终端 AI 编程工具，直接在命令行中与整个代码库交互。能读写文件、执行命令、搜索代码、管理 Git，被誉为开发者的终极编程搭档。",
+        tags: ["终端编程","代码库理解","Git 集成"],
+        feats: ["终端命令行交互","全代码库理解","文件读写 & 编辑","Git 操作","自动重构","多模型支持"],
+        price: "Pro $20/月起",
+        url: "https://docs.anthropic.com/en/docs/claude-code",
+        s: {zh:3, code:5, art:1, vid:1}
+    },
+    {
+        name: "GitHub Copilot",
+        co: "Microsoft / GitHub",
+        icon: "Co",
+        color: "#0078d4",
+        cat: ["code","chat"],
+        desc: "全球使用最广泛的 AI 编程助手，深度集成 VS Code 和 GitHub。支持代码补全、对话编程、Pull Request 摘要，企业版用户超过百万。",
+        tags: ["代码补全","VS Code","GitHub"],
+        feats: ["智能代码补全","Chat 对话编程","GitHub PR 摘要","多语言支持","企业版安全","Office 集成"],
+        price: "免费 / Pro $10/月",
+        url: "https://github.com/features/copilot",
+        s: {zh:3, code:5, art:2, vid:1}
+    },
+    {
+        name: "Cursor",
+        co: "Anysphere",
+        icon: "Cu",
+        color: "#7c3aed",
+        cat: ["code"],
+        desc: "现象级 AI 编程 IDE，基于 VS Code 深度改造。集成了 GPT-4、Claude 等多种模型，提供 Tab 补全、对话编程、代码库理解，重新定义了 AI 编程体验。",
+        tags: ["AI IDE","Tab 补全","多模型"],
+        feats: ["Tab 智能补全","Agent 对话编程","全项目理解","多模型切换","Composer 多文件编辑","终端集成"],
+        price: "免费 / Pro $20/月",
+        url: "https://cursor.com",
+        s: {zh:2, code:5, art:1, vid:1}
+    },
+    {
+        name: "Windsurf",
+        co: "Codeium",
+        icon: "W",
+        color: "#06b6d4",
+        cat: ["code"],
+        desc: "Codeium 推出的 AI 编程 IDE，主打 Cascade 流式编程体验。AI 深度理解项目上下文，能自主执行多步编程任务，是 Cursor 的强劲对手。",
+        tags: ["AI IDE","Cascade","流式编程"],
+        feats: ["Cascade 智能代理","上下文深度感知","多文件自动编辑","流式编程体验","免费额度充足","终端集成"],
+        price: "免费 / Pro $15/月",
+        url: "https://codeium.com/windsurf",
+        s: {zh:2, code:5, art:1, vid:1}
+    },
+    {
+        name: "Midjourney",
+        co: "Midjourney",
+        icon: "M",
+        color: "#5865f2",
+        cat: ["creative"],
+        desc: "顶级 AI 图像生成工具，以惊艳的艺术风格和画面质感著称。V6.1 模型在细节、光影、构图方面达到专业水准，广泛应用于设计、广告和艺术创作。",
+        tags: ["图像生成","艺术","专业设计"],
+        feats: ["V6.1 超高质量","多种艺术风格","图片编辑 & 混合","变体生成","风格参考","Web 编辑器"],
+        price: "Basic $10/月起",
+        url: "https://www.midjourney.com",
+        s: {zh:2, code:1, art:5, vid:2}
+    },
+    {
+        name: "DALL·E 3",
+        co: "OpenAI",
+        icon: "D3",
+        color: "#10a37f",
+        cat: ["creative"],
+        desc: "OpenAI 推出的图像生成模型，集成在 ChatGPT 中。擅长理解复杂提示词，在文字渲染方面表现突出，能精准生成包含文字的海报、标志等设计。",
+        tags: ["图像生成","文字渲染","ChatGPT 集成"],
+        feats: ["精准提示词理解","文字渲染能力强","ChatGPT 深度集成","多风格支持","安全过滤","API 调用"],
+        price: "集成在 ChatGPT Plus 中",
+        url: "https://openai.com/dall-e-3",
+        s: {zh:3, code:1, art:5, vid:1}
+    },
+    {
+        name: "Stable Diffusion",
+        co: "Stability AI",
+        icon: "SD",
+        color: "#a855f7",
+        cat: ["creative"],
+        desc: "开源图像生成模型的标杆，可本地部署运行。拥有庞大的社区生态（ComfyUI、A1111），支持 LoRA 微调和 ControlNet 精确控制，是创作者的瑞士军刀。",
+        tags: ["开源","本地部署","ComfyUI"],
+        feats: ["完全开源免费","本地部署运行","ComfyUI 工作流","ControlNet 精控","LoRA 模型微调","社区模型丰富"],
+        price: "免费开源",
+        url: "https://stability.ai",
+        s: {zh:2, code:2, art:5, vid:2}
+    },
+    {
+        name: "即梦 AI",
+        co: "字节跳动",
+        icon: "即",
+        color: "#ec4899",
+        cat: ["creative","video"],
+        desc: "字节跳动推出的 AI 创意创作平台，支持文生图、图生图、文生视频。中文提示词优化出色，风格多样，是国内最受欢迎的 AI 创作工具之一。",
+        tags: ["图像生成","视频生成","中文优化"],
+        feats: ["中文提示词优化","多种艺术风格","图生视频","人脸一致性","智能编辑","社区作品展示"],
+        price: "免费 / 会员",
+        url: "https://jimeng.jianying.com",
+        s: {zh:5, code:1, art:5, vid:4}
+    },
+    {
+        name: "可灵 AI",
+        co: "快手",
+        icon: "可",
+        color: "#f97316",
+        cat: ["creative","video"],
+        desc: "快手推出的 AI 视频生成平台，在全球 AI 视频赛道中名列前茅。支持文生视频、图生视频，运动控制自然流畅，画质和时长均领先行业。",
+        tags: ["视频生成","图生视频","运动控制"],
+        feats: ["高质量视频生成","运动笔刷控制","图生视频","长视频支持","文生图","API 服务"],
+        price: "免费额度 / 付费",
+        url: "https://klingai.kuaishou.com",
+        s: {zh:5, code:1, art:4, vid:5}
+    },
+    {
+        name: "Sora",
+        co: "OpenAI",
+        icon: "So",
+        color: "#10a37f",
+        cat: ["video"],
+        desc: "OpenAI 推出的文生视频旗舰模型，能根据文字描述生成长达 20 秒的高质量视频。画面逼真、物理逻辑合理，被视为 AI 视频生成的里程碑之作。",
+        tags: ["文生视频","高质量","物理模拟"],
+        feats: ["最长 20 秒视频","逼真画面效果","物理引擎级模拟","图生视频","视频编辑 & 混合","故事板创作"],
+        price: "Plus $20/月起",
+        url: "https://sora.com",
+        s: {zh:3, code:1, art:4, vid:5}
+    },
+    {
+        name: "Runway",
+        co: "Runway ML",
+        icon: "R",
+        color: "#06b6d4",
+        cat: ["video","creative"],
+        desc: "专业级 AI 视频创作平台，Gen-3 Alpha 模型效果出众。提供文生视频、图生视频、运动笔刷、绿幕抠图等专业工具，深受影视创作者青睐。",
+        tags: ["专业视频","影视级","运动笔刷"],
+        feats: ["Gen-3 Alpha 模型","运动笔刷控制","绿幕抠图","视频风格转换","慢动作生成","专业工作流"],
+        price: "免费试用 / $15/月",
+        url: "https://runwayml.com",
+        s: {zh:2, code:1, art:4, vid:5}
+    },
+    {
+        name: "Pika",
+        co: "Pika Labs",
+        icon: "Pi",
+        color: "#8b5cf6",
+        cat: ["video"],
+        desc: "新锐 AI 视频生成平台，以简洁易用著称。支持文字生成视频、图片动态化、视频风格转换和口型同步，操作门槛低，适合快速创作短视频。",
+        tags: ["短视频","易用","口型同步"],
+        feats: ["文生视频","图生视频","风格转换","口型同步","3D 动画效果","便捷在线编辑"],
+        price: "免费试用 / $10/月",
+        url: "https://pika.art",
+        s: {zh:2, code:1, art:3, vid:4}
+    },
+    {
+        name: "Suno",
+        co: "Suno AI",
+        icon: "S",
+        color: "#8b5cf6",
+        cat: ["music"],
+        desc: "AI 音乐生成领域的领军者。输入文字描述或歌词即可生成包含人声的完整歌曲，支持流行、摇滚、说唱、古典等多种风格，让每个人都能创作音乐。",
+        tags: ["音乐生成","人声合成","多风格"],
+        feats: ["文字生成完整歌曲","多种音乐风格","AI 人声合成","歌词自动创作","风格 & 情绪定制","社区分享"],
+        price: "免费 / Pro $10/月",
+        url: "https://suno.com",
+        s: {zh:2, code:1, art:5, vid:1}
+    },
+    {
+        name: "Perplexity",
+        co: "Perplexity AI",
+        icon: "P",
+        color: "#20b2aa",
+        cat: ["search"],
+        desc: "AI 驱动的智能搜索引擎，被誉为「AI 版谷歌」。将搜索与对话完美结合，每次回答附带引用来源，支持深度研究模式，兼顾时效性和可靠性。",
+        tags: ["AI 搜索","来源引用","深度研究"],
+        feats: ["实时联网搜索","来源引用验证","多模型支持","学术论文搜索","深度研究模式","Collections 收藏"],
+        price: "免费 / Pro $20/月",
+        url: "https://www.perplexity.ai",
+        s: {zh:3, code:2, art:2, vid:1}
+    },
+    {
+        name: "秘塔AI搜索",
+        co: "秘塔科技",
+        icon: "秘",
+        color: "#0ea5e9",
+        cat: ["search"],
+        desc: "国内领先的 AI 搜索引擎，无需翻墙即可使用。支持深度搜索和学术搜索，回答附带来源引用，中文搜索体验优秀，是国内用户的首选 AI 搜索工具。",
+        tags: ["中文搜索","学术","无广告"],
+        feats: ["中文深度搜索","学术论文搜索","来源引用","无广告体验","思维导图生成","简洁/深入模式"],
+        price: "免费",
+        url: "https://metaso.cn",
+        s: {zh:5, code:2, art:2, vid:1}
+    }
+];
+
+// ==================== FILTER CONFIG ====================
+var FILTERS = [
+    {key:"all", label:"全部"},
+    {key:"chat", label:"对话助手"},
+    {key:"code", label:"编程工具"},
+    {key:"creative", label:"图像创意"},
+    {key:"video", label:"视频生成"},
+    {key:"music", label:"音乐创作"},
+    {key:"search", label:"AI 搜索"}
+];
+
+// ==================== RENDER ====================
+var currentFilter = "all";
+
+function renderCards(filter) {
+    currentFilter = filter || currentFilter;
+    var grid = document.getElementById("cardGrid");
+    grid.innerHTML = "";
+    var list = currentFilter === "all" ? AI_LIST : AI_LIST.filter(function(a){ return a.cat.indexOf(currentFilter) >= 0; });
+
+    for (var i = 0; i < list.length; i++) {
+        (function(ai, idx){
+            var el = document.createElement("div");
+            el.className = "card";
+            el.style.setProperty("--c", ai.color);
+
+            var tagsHtml = "";
+            for (var t = 0; t < ai.tags.length; t++) {
+                tagsHtml += '<span class="tag" style="color:'+ai.color+';border-color:'+ai.color+'40;background:'+ai.color+'10;">'+ai.tags[t]+'</span>';
+            }
+
+            var featsHtml = "";
+            for (var f = 0; f < ai.feats.length; f++) {
+                featsHtml += '<div class="feat"><span class="feat-dot" style="background:'+ai.color+'"></span>'+ai.feats[f]+'</div>';
+            }
+
+            el.innerHTML =
+                '<div class="card-head">' +
+                    '<div class="card-icon" style="background:'+ai.color+'20;color:'+ai.color+';border:1px solid '+ai.color+'40;">'+ai.icon+'</div>' +
+                    '<div><div class="card-name">'+ai.name+'</div><div class="card-co">'+ai.co+'</div></div>' +
+                '</div>' +
+                '<p class="card-desc">'+ai.desc+'</p>' +
+                '<div class="card-tags">'+tagsHtml+'</div>' +
+                '<div class="card-features">'+featsHtml+'</div>' +
+                '<div class="card-foot">' +
+                    '<span class="card-price"><strong>'+ai.price+'</strong></span>' +
+                    '<a href="'+ai.url+'" target="_blank" class="card-link">访问官网 &rarr;</a>' +
+                '</div>';
+
+            grid.appendChild(el);
+            setTimeout(function(){ el.className = "card show"; }, 60 * idx);
+        })(list[i], i);
+    }
+}
+
+function renderFilters() {
+    var box = document.getElementById("filters");
+    for (var i = 0; i < FILTERS.length; i++) {
+        (function(f){
+            var btn = document.createElement("button");
+            btn.className = "filter-btn" + (f.key === "all" ? " active" : "");
+            btn.textContent = f.label;
+            btn.setAttribute("data-f", f.key);
+            btn.onclick = function() {
+                var all = box.querySelectorAll(".filter-btn");
+                for (var j = 0; j < all.length; j++) all[j].className = "filter-btn";
+                btn.className = "filter-btn active";
+                renderCards(f.key);
+            };
+            box.appendChild(btn);
+        })(FILTERS[i]);
+    }
+}
+
+function starHtml(n) {
+    var h = '<div class="stars">';
+    for (var i = 0; i < 5; i++) {
+        h += '<div class="star' + (i < n ? ' on' : '') + '"></div>';
+    }
+    return h + '</div>';
+}
+
+function renderTable() {
+    var body = document.getElementById("cmpBody");
+    for (var i = 0; i < AI_LIST.length; i++) {
+        var a = AI_LIST[i];
+        var vid = a.s.vid;
+        var tr = document.createElement("tr");
+        tr.innerHTML =
+            '<td><span class="ai-n"><span class="mi" style="background:'+a.color+'20;color:'+a.color+'">'+a.icon+'</span>'+a.name+'</span></td>' +
+            '<td>'+a.co+'</td>' +
+            '<td>'+a.tags[0]+'</td>' +
+            '<td>'+starHtml(a.s.zh)+'</td>' +
+            '<td>'+starHtml(a.s.code)+'</td>' +
+            '<td>'+starHtml(a.s.art)+'</td>' +
+            '<td>'+starHtml(vid)+'</td>' +
+            '<td>'+(a.price.indexOf("免费") >= 0 ? "✅" : "❌")+'</td>';
+        body.appendChild(tr);
+    }
+}
+
+function renderTimeline() {
+    var data = [
+        {d:"2022.11", t:"ChatGPT 横空出世", x:"OpenAI 发布 ChatGPT，5天用户破百万，开启 AI 对话新纪元"},
+        {d:"2023.03", t:"GPT-4 发布", x:"多模态大模型登场，AI 能力实现质的飞跃"},
+        {d:"2023.03", t:"文心一言上线", x:"百度推出国内首个大语言模型产品"},
+        {d:"2023.07", t:"Claude 2 发布", x:"Anthropic 推出 Claude 2，100K 上下文领先"},
+        {d:"2023.12", t:"Gemini 发布", x:"Google 推出 Gemini 多模态模型，与 GPT-4 正面竞争"},
+        {d:"2024.02", t:"Sora 预览", x:"OpenAI 发布 Sora 视频生成预览，AI 视频创作引发轰动"},
+        {d:"2024.03", t:"Kimi 爆火出圈", x:"月之暗面 Kimi 凭超长上下文能力成为国内现象级 AI 产品"},
+        {d:"2024.05", t:"GPT-4o 发布", x:"全能多模态模型，支持实时语音和视频对话"},
+        {d:"2024.06", t:"可灵 AI 亮相", x:"快手发布可灵视频生成模型，中国 AI 视频技术惊艳全球"},
+        {d:"2024.07", t:"Llama 3.1 开源", x:"Meta 发布 405B 开源模型，开源 AI 首次接近闭源水平"},
+        {d:"2024.08", t:"Cursor 爆发", x:"AI 编程 IDE Cursor 用户激增，AI 辅助编程成为新范式"},
+        {d:"2024.09", t:"o1 推理模型", x:"OpenAI 发布 o1，AI 在复杂推理任务上取得突破"},
+        {d:"2024.12", t:"Sora 正式发布", x:"OpenAI 正式上线 Sora 视频生成"},
+        {d:"2025.01", t:"DeepSeek R1 震撼业界", x:"中国团队以极低成本实现顶级推理表现，震动全球"},
+        {d:"2025.02", t:"Claude Code 发布", x:"Anthropic 推出终端编程工具，AI 编程进入命令行时代"},
+        {d:"2025.03", t:"Claude 4 系列", x:"Anthropic 推出新一代模型，编程和长文任务持续领先"},
+        {d:"2025.04", t:"AI Agent 爆发", x:"各大厂商推出 AI Agent，AI 从对话走向自主执行任务"},
+        {d:"2025.05", t:"Gemini 2.5 Pro", x:"Google 发布百万上下文模型，多模态能力大幅跃升"}
+    ];
+    var box = document.getElementById("tlList");
+    for (var i = 0; i < data.length; i++) {
+        var item = data[i];
+        var el = document.createElement("div");
+        el.className = "tl-item";
+        el.innerHTML =
+            '<div class="tl-dot"></div>' +
+            '<div class="tl-date">'+item.d+'</div>' +
+            '<div class="tl-title">'+item.t+'</div>' +
+            '<div class="tl-desc">'+item.x+'</div>';
+        box.appendChild(el);
+    }
+}
+
+// ==================== INIT ====================
+renderFilters();
+renderCards("all");
+renderTable();
+renderTimeline();
+
+// Nav scroll effect
+window.addEventListener("scroll", function(){
+    document.getElementById("nav").classList.toggle("scrolled", window.scrollY > 20);
+});
+
+// ==================== STARFIELD ====================
+(function(){
+    var c = document.getElementById("stars");
+    var ctx = c.getContext("2d");
+    var W, H;
+    var staticStars = [];   // draw once, never redraw
+    var twinkleStars = [];  // animate opacity
+    var meteor = null;
+
+    function resize() {
+        W = window.innerWidth;
+        H = window.innerHeight;
+        c.width = W;
+        c.height = H;
+        buildStars();
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    function buildStars() {
+        staticStars = [];
+        twinkleStars = [];
+        var total = Math.min(500, Math.floor(W * H / 2500));
+        for (var i = 0; i < total; i++) {
+            var isBright = Math.random() < 0.06;
+            var r = isBright ? (1.2 + Math.random() * 1.8) : (0.3 + Math.random() * 0.8);
+            var star = {
+                x: Math.random() * W,
+                y: Math.random() * H,
+                r: r,
+                a: isBright ? (0.7 + Math.random() * 0.3) : (0.3 + Math.random() * 0.5)
+            };
+            // ~30% of stars twinkle
+            if (Math.random() < 0.3) {
+                star.sp = 0.008 + Math.random() * 0.015;
+                star.ph = Math.random() * 6.28;
+                twinkleStars.push(star);
+            } else {
+                staticStars.push(star);
+            }
+        }
+        drawStaticLayer();
+    }
+
+    // Draw non-twinkling stars once onto canvas (no per-frame cost)
+    function drawStaticLayer() {
+        for (var i = 0; i < staticStars.length; i++) {
+            var s = staticStars[i];
+            drawStar(s.x, s.y, s.r, s.a);
+        }
+    }
+
+    function drawStar(x, y, r, a) {
+        // tiny glow + core
+        if (r > 1) {
+            ctx.globalAlpha = a * 0.25;
+            ctx.fillStyle = "#a29bfe";
+            ctx.beginPath();
+            ctx.arc(x, y, r * 2.5, 0, 6.28);
+            ctx.fill();
+        }
+        ctx.globalAlpha = a;
+        ctx.fillStyle = "#dde";
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, 6.28);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+
+    function draw() {
+        // Only clear & redraw twinkling stars + meteor
+        // First redraw static background
+        ctx.clearRect(0, 0, W, H);
+        drawStaticLayer();
+
+        // Twinkling stars
+        for (var i = 0; i < twinkleStars.length; i++) {
+            var s = twinkleStars[i];
+            s.ph += s.sp;
+            var a = s.a * (0.4 + 0.6 * Math.sin(s.ph));
+            drawStar(s.x, s.y, s.r, a);
+        }
+
+        // Meteor
+        if (!meteor && Math.random() < 0.004) {
+            meteor = {
+                x: Math.random() * W * 0.6,
+                y: Math.random() * H * 0.25,
+                vx: 5 + Math.random() * 5,
+                vy: 2.5 + Math.random() * 2.5,
+                life: 1
+            };
+        }
+        if (meteor) {
+            meteor.x += meteor.vx;
+            meteor.y += meteor.vy;
+            meteor.life -= 0.018;
+            if (meteor.life <= 0 || meteor.x > W || meteor.y > H) {
+                meteor = null;
+            } else {
+                var tx = meteor.x - meteor.vx * 10;
+                var ty = meteor.y - meteor.vy * 10;
+                ctx.globalAlpha = meteor.life;
+                ctx.strokeStyle = "#c8daff";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(tx, ty);
+                ctx.lineTo(meteor.x, meteor.y);
+                ctx.stroke();
+                // head dot
+                ctx.fillStyle = "#fff";
+                ctx.beginPath();
+                ctx.arc(meteor.x, meteor.y, 1.5, 0, 6.28);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        requestAnimationFrame(draw);
+    }
+    draw();
+})();
+</script>
+</body>
+</html>
